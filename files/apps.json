@@ -1,0 +1,30 @@
+{
+    "iot":{
+        "icon": "files/assets/apps/iot.png"
+
+    },
+
+    "Chat":{
+        "icon": "files/assets/apps/chat.png"
+    },
+
+    "Lectura":{
+        "icon": "files/assets/apps/lectura.png",
+        "book":  "files/assets/libro/libro.pdf"
+        
+    },
+
+    "TikTok":{
+        "icon": "files/assets/apps/tiktok.png"
+
+    },
+
+    "Tetris":{
+        "icon": "files/assets/apps/tetris.png"
+    },
+
+    "SOS":{
+        "icon": "files/assets/apps/sos.png"
+    }
+
+}

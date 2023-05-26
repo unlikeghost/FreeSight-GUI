@@ -1,0 +1,22 @@
+title = "Free Sight"
+description = "A simple GUI for people with ALS to control their computer with their eyes and head."
+version = "0.0.1"
+
+[authors]
+main_author = "Jesus Alan Hernandez Galvan"
+colaborador = "Luis angel Fernandez Anchondo"
+
+[socket]
+ip = "127.0.0.1"
+port = 12345
+
+[server]
+ip = "192.168.100.13"
+port = 5000
+
+[graphics.dev]
+width = 800
+height = 600
+
+[mode]
+dev = 1
