@@ -1,0 +1,1 @@
+conda activate Proyecto-EEG && python .\FreeSight.py

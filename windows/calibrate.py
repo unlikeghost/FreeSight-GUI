@@ -4,13 +4,13 @@ from os import path as os_path
 
 class ClaibrateWindow:
     
-    def __init__(self, master, headset, full_screen:bool=False) -> None:
+    def __init__(self, headset, full_screen:bool=False) -> None:
         
-        self.iter_for_calibration:int = 300
+        self.iter_for_calibration:int = 150
         
         self.headset = headset
         
-        self.top_level = customtkinter.CTkToplevel(master)
+        self.top_level = customtkinter.CTk()
         self.top_level.title('Free Sight Calibración de sujeto')
         self.top_level.focus_force()
         
@@ -52,27 +52,28 @@ class ClaibrateWindow:
         
         self.progressbar.grid(row=1, column=0, padx=10, pady=10,
                               sticky='nsew')
+                
+        self.top_level.protocol('WM_DELETE_WINDOW', self.close)
         
-        self.master = master
-        
-        self.top_level.protocol('WM_DELETE_WINDOW', self.on_close)
+        # self.top_level.mainloop()
 
     def calibrate(self) -> float:
         
-        x_start_sum:float = 0
+        self.x_start_sum:float = 0
+        x_start_samples:float = 0
         
         for iteration in range(self.iter_for_calibration):
+            ##PANTALLA DE CARGA
             value:float = iteration / self.iter_for_calibration
             self.progress.set(value)
             self.top_level.update()
-            x_start_sum += self.headset.calibrate_subject(x_start_sum)
-            sleep(0.05)
-                
-        return x_start_sum / self.iter_for_calibration
-    
-    def on_close(self) -> None:
-        self.top_level.destroy()
-        self.master.deiconify()
+            
+            x_temp_sum, x_temp_samples = self.headset.calibrate_subject(self.x_start_sum, x_start_samples)
+            self.x_start_sum += x_temp_sum
+            x_start_samples += x_temp_samples
+        
+        return self.x_start_sum / self.iter_for_calibration  
+        # return self.x_start_sum / self.iter_for_calibration
     
     def close(self) -> None:
-        self.top_level.destroy()
+        self.top_level.destroy()        

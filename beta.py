@@ -12,48 +12,46 @@ from windows import (SOSWindow,
                      NoImplementedWindow,
                      ClaibrateWindow)
 
-
-class FreeSight(Thread):
-    
+class FreeSight(customtkinter.CTk):
     def __init__(self, ip_server:str, port_server:int) -> None:
-        Thread.__init__(self)
-        self.ip_server:str = ip_server
-        self.port_server:int = port_server
-    
-    def callback(self):
-        self.root.quit()
-    
-    def run(self) -> None:
+        super().__init__()
         
         iconpath:str = os.path.join('files', 'assets', 'icon.ico')
         appsjsonpath:str = os.path.join('files', 'apps.json')
         self.apps_json:dict = load_json(open(appsjsonpath, 'r'))
         self.index_app:Dict[int, str] = {index:app for index, app in enumerate(self.apps_json)}
+
+        self.title('Free Sight')
+        self.iconbitmap(iconpath)
         
-        self.master = customtkinter.CTk()
-        self.master.title('Free Sight')
-        self.master.iconbitmap(iconpath)
+        self.ip_server:str = ip_server
+        self.port_server:int = port_server
 
         if DEBUG:
             self.full_screen:bool = False
             self.HEIGHT:int = config['graphics']['dev']['height']
             self.WIDTH:int = config['graphics']['dev']['width']
             
-            self.master.geometry(f'{self.WIDTH}x{self.HEIGHT}+0+0')
+            self.geometry(f'{self.WIDTH}x{self.HEIGHT}+0+0')
             
             IMAGE_SIZE = ((self.WIDTH // 3)-35,
                           (self.HEIGHT // 2)-35)
             
         else:
             self.full_screen:bool = True
-            self.master.attributes('-fullscreen', True)
-            self.WIDTH:int = self.master.winfo_screenwidth()
-            self.HEIGHT = self.master.winfo_screenheight()
+            self.attributes('-fullscreen', True)
+            self.WIDTH:int = self.winfo_screenwidth()
+            self.HEIGHT = self.winfo_screenheight()
             
             IMAGE_SIZE = ((self.WIDTH // 3)-35,
                           (self.HEIGHT // 2)-35)
-                        
-            self.master.bind('<Escape>', lambda _: self.master.destroy())
+            
+            self.is_calibrated:bool = False
+            
+            self.bind('<Escape>', lambda _: self.destroy())
+
+            if not self.is_calibrated:
+                self.__create_calibration_window__()
 
         self.x_ref:float = 0.0
         
@@ -65,7 +63,7 @@ class FreeSight(Thread):
             
             image = customtkinter.CTkImage(Image.open(iconpath), size=IMAGE_SIZE)
             
-            self.apps_buttons[app] = customtkinter.CTkButton(master=self.master.master,
+            self.apps_buttons[app] = customtkinter.CTkButton(master=self,
                                                             text='',
                                                             image=image,
                                                             )
@@ -81,18 +79,34 @@ class FreeSight(Thread):
         
         self.apps_buttons['iot'].configure(border_color='red', border_width=5)
         
-        self.master.bind('<Left>', self.switch_button)
-        self.master.bind('<Right>', self.switch_button)
-        self.master.bind('<Up>', self.switch_button)
-        self.master.bind('<Down>', self.switch_button)
-        self.master.bind('<Return>', self.launch_app)
-        # self.master.protocol('WM_DELETE_WINDOW', self.close)
+        self.bind('<Left>', self.switch_button)
+        self.bind('<Right>', self.switch_button)
+        self.bind('<Up>', self.switch_button)
+        self.bind('<Down>', self.switch_button)
+        self.bind('<Return>', self.launch_app)
+        self.protocol('WM_DELETE_WINDOW', self.close)
         
         self.current_index_app:int = 0
         
         self.current_app:str = 'iot'
         
-        self.master.mainloop()   
+        self.headset_thread:Thread = None
+                        
+    def __create_calibration_window__(self):
+        self.calibration_window = ClaibrateWindow(master=self, headset=Device,
+                                                  full_screen=False)
+        self.iconify()
+        self.x_ref = self.calibration_window.calibrate()
+        
+        if self.x_ref:
+            self.is_calibrated = True
+            self.calibration_window.close()
+            self.after_idle(self.deiconify)
+        
+            self.headset_thread:Thread = Thread(target=Device.move_mode,
+                                                  args=(self.x_ref,))
+            
+            self.headset_thread.start()
     
     def switch_button(self, event):
         len_apps:int = len(self.apps_json)
@@ -135,34 +149,41 @@ class FreeSight(Thread):
     def launch_app(self, _):
         
         if self.current_app == 'iot':
-            self.top_level = IoTWindow(master=self.master, ip_server=IP_SERVER, port_server=PORT_SERVER,
+            self.top_level = IoTWindow(master=self, ip_server=IP_SERVER, port_server=PORT_SERVER,
                                        full_screen=self.full_screen)
-            self.master.iconify()
+            self.iconify()
             
         elif self.current_app == 'Chat':
-            self.top_level = ChatWindow(master=self.master, ip_server=IP_SERVER, port_server=PORT_SERVER,
+            self.top_level = ChatWindow(master=self, ip_server=IP_SERVER, port_server=PORT_SERVER,
                                         full_screen=self.full_screen)
-            self.master.iconify()
+            self.iconify()
         
         elif self.current_app == 'SOS':
-            self.top_level = SOSWindow(master=self.master, ip_server=IP_SERVER, port_server=PORT_SERVER,
+            self.top_level = SOSWindow(master=self, ip_server=IP_SERVER, port_server=PORT_SERVER,
                                        full_screen=self.full_screen)
-            self.master.iconify()
+            self.iconify()
         
         elif self.current_app == 'Tetris':
             tetris_path = os.path.join('Windows', 'Tetris.html')
             os_system(f'start {tetris_path}')
         
         elif self.current_app == 'Lectura':
-            self.top_level = NoImplementedWindow(master=self.master,
+            self.top_level = NoImplementedWindow(master=self,
                                                  full_screen=self.full_screen)
-            self.master.iconify()
+            self.iconify()
             
         elif self.current_app == 'TikTok':
-            self.top_level = NoImplementedWindow(master=self.master,
+            self.top_level = NoImplementedWindow(master=self,
                                                  full_screen=self.full_screen)
-            self.master.iconify()
-
+            self.iconify()
+    
+    def close(self) -> None:
+        
+        if self.headset_thread is not None:
+            self.headset_thread.join()
+        self.top_level.destroy()
+        # self.headset_thread.join()
+            
 
 if __name__ == '__main__':
     
@@ -185,27 +206,12 @@ if __name__ == '__main__':
     
     Device = Headset(ip=IP_SOCKET, port=PORT_SOCKET)
     
-    calibration_window = ClaibrateWindow(full_screen=False,
-                                         headset=Device)
-    
-    x_ref = calibration_window.calibrate()
-    calibration_window.close()
-    
-    head_thread:Thread = Thread(target=Device.move_mode,
-                                args=(x_ref,))
-    head_thread.start()
-    
-    app = FreeSight(IP_SERVER, PORT_SERVER)
-    app.start()
-    
-    head_thread.join()
-    app.join()
     # app = Thread(target=FreeSight,
     #              args=(IP_SERVER, PORT_SERVER))
     # app.start()
     
     # app.join()
     
-    # app = FreeSight(IP_SERVER, PORT_SERVER)
-    # app.mainloop()
+    app = FreeSight(IP_SERVER, PORT_SERVER)
+    app.mainloop()
     
