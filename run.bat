@@ -1,1 +1,1 @@
-conda activate Proyecto-EEG && python .\FreeSight.py
+conda activate FreeSight-GUI && python .\FreeSight.py
