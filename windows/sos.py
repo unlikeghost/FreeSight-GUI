@@ -82,8 +82,9 @@ class SOSWindow:
             self.progress.set(value)
             self.top_level.update()
             sleep(0.1)
-        
-        self.__send_sos__()
+            
+        else:
+            self.__send_sos__()
     
     def __send_sos__(self) -> None:
         headers:Dict[str, str] = {
@@ -91,27 +92,22 @@ class SOSWindow:
             }
         
         payload:str = f'msg=Nececito ayuda urgentemente!!!'
-
-        response = request('POST',
-                           self.url,
-                           headers=headers,
-                           data=payload)
         
-        if response.status_code == 200:
-            
-            self.on_close()
+        try:
+            request('POST',
+                    self.url,
+                    headers=headers,
+                    data=payload)
         
-        else:
-            CTkMessagebox(title='Error', 
-                          message='No se puede acceder al servidor, verifique su coneccion a internet',
-                          icon='cancel')
-            
+        except:
+            pass
+        
         playsound(os_path.join('files', 'assets', 'sos', 'sos.mp3'))
-        
+        self.on_close()        
         
     def on_close(self,) -> None:
-        self.top_level.destroy()
         self.master.deiconify()
+        self.top_level.destroy()
     
     def on_cancel(self, event) -> None:
         self.on_close()

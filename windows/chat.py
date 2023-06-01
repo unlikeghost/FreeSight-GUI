@@ -185,24 +185,22 @@ class ChatWindow:
             }
         
         payload:str = f'msg={self.text}'
-
-        response = request('POST',
-                           self.url,
-                           headers=headers,
-                           data=payload)
         
-        if response.status_code == 200:
+        try:
+            request('POST',
+                    self.url,
+                    headers=headers,
+                    data=payload)
+        
+        except:
+            pass
+        
+        self.on_close()
             
-            self.on_close()
-        
-        else:
-            CTkMessagebox(title='Error', 
-                          message='No se puede acceder al servidor, verifique su coneccion a internet',
-                          icon='cancel')
                 
     def on_close(self) -> None:
-        self.top_level.destroy()
         self.master.deiconify()
+        self.top_level.destroy()
     
     def close(self) -> None:
         self.top_level.destroy()

@@ -82,9 +82,9 @@ class IoTWindow:
         self.current_key:str = self.key_mapping[self.current_index_key]
         
     def on_close(self) -> None:
+        self.master.deiconify()
         dump_json(self.status_iot, open(os_path.join('files', 'assets', 'iot', 'status.json'), 'w'))
         self.top_level.destroy()
-        self.master.deiconify()
     
     def close(self) -> None:
         self.top_level.destroy()
@@ -112,24 +112,26 @@ class IoTWindow:
         if self.current_index_key == 2:
             self.on_close()
         else:
-            
             name:str = self.buttons_mapping[self.current_index_key]
             self.status_iot[name]['status'] = 'on' if self.status_iot[name]['status'] == 'off' else 'off'
-            
             status_iot_foco1:int = 1 if self.status_iot['Foco 1']['status'] == 'on' else 0
             status_iot_foco2:int = 1 if self.status_iot['Foco 2']['status'] == 'on' else 0
             
             payload:str = f'led_1=Cocina&led_2=Habitacion&status_1={status_iot_foco1}&status_2={status_iot_foco2}'
-            
+
             headers:Dict[str, str] = {
-            'Content-Type': 'application/x-www-form-urlencoded'
-            }
-        
-            request('POST',
-                    self.url,
-                    headers=headers,
-                    data=payload)
-        
+                'Content-Type': 'application/x-www-form-urlencoded'
+                }
+                
+            try:
+
+                request('POST',
+                        self.url,
+                        headers=headers,
+                        data=payload)
+            except Exception as e:
+                pass
+    
             new_status = self.status_iot[name]['status']
             
             iconpath:str = os_path.join('files', 'assets', 'iot', f'{new_status}.png')
