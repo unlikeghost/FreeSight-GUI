@@ -1,26 +1,21 @@
-import os
 import json
 import socket
 import winsound
 from typing import List
-from numpy import save as np_save
-from numpy import load as np_load
+
 
 class Headset:
     def __init__(self, ip:str='127.0.0.1', port:int=12345):
         
         self.ip:str = ip
         self.port:int = port
-        
         self.__init_socket__()
         
-    
     def __init_socket__(self) -> None:
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
         self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         server_address = (self.ip, self.port)
         self.sock.bind(server_address)
-        
         
         print("--------------------")
         print("-- UDP LISTENER-----")
@@ -50,11 +45,6 @@ class Headset:
         if iteration == total: 
             print()
     
-    def __load_subj__(self, subject_name:str,
-                      default_path:str=os.path.join('files', 'subjects')) -> float:
-        
-        return np_load(os.path.join(default_path, f'{subject_name}.npy'))
-    
     def calibrate_subject(self, 
                           progress_bar:bool=False) -> bool:
                 
@@ -79,17 +69,14 @@ class Headset:
 
         return x_start_sum / x_start_samples
     
-    def move_mode(self, x_ref) -> None:
+    def move_mode(self, x_ref:float) -> None:
         
-        x_start:float = x_ref
         z_prev:float = 0
         x_prev:float = 0
         space_pressed:bool = False
         left_once:bool = False
         right_once:bool = False
-        
-        print("Move mode, move your head...")
-        
+                
         while True:
             data, _ = self.sock.recvfrom(20000)
             obj = json.loads(data.decode())
@@ -104,23 +91,23 @@ class Headset:
                     space_pressed = True
                 
                 else:
-                    if 0.075 + x_start < x < 0.2 + x_start and not left_once:  # short left
+                    if 0.075 + x_ref < x < 0.2 + x_ref and not left_once:  # short left
                         print('left')
                         left_once:bool = True
                         space_pressed:bool = False
-                    elif -0.075 + x_start > x > -0.2 + x_start and not right_once:  # short right
+                    elif -0.075 + x_ref > x > -0.2 + x_ref and not right_once:  # short right
                         print('right')
                         right_once = True
                         space_pressed = False
-                    elif x > 0.2 + x_start and x_prev < x:  # move left
+                    elif x > 0.2 + x_ref and x_prev < x:  # move left
                         print('left')
                         left_once = False
                         space_pressed = False
-                    elif x < -0.2 + x_start and x_prev > x:  # move right
+                    elif x < -0.2 + x_ref and x_prev > x:  # move right
                         print('right')
                         right_once = False
                         space_pressed = False
-                    elif -0.075 + x_start < x < 0.075 + x_start:  # head is neutral
+                    elif -0.075 + x_ref < x < 0.075 + x_ref:  # head is neutral
                         left_once = False
                         right_once = False
                         space_pressed = False
@@ -149,13 +136,9 @@ class Headset:
                         print('up')
                         rotated:bool = True
 
+
 if __name__ == "__main__":
-    MOVE_PIECE_LEFT = "left"
-    MOVE_PIECE_RIGHT = "right"
-    DROP_PIECE = "space"
-    ROTATE_PIECE = "up"
     
-    # nombre = 'Luis'
     device = Headset()
     ref = device.calibrate_subject()
     

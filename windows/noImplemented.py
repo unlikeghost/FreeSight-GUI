@@ -76,5 +76,5 @@ class NoImplementedWindow:
         self.on_close()
     
     def on_close(self,) -> None:
-        self.top_level.destroy()
         self.master.deiconify()
+        self.top_level.destroy()

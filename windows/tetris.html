@@ -413,7 +413,7 @@
       }
 
       // up arrow key (rotate)
-      if (e.which === 32) {
+      if (e.which === 13) {
         const matrix = rotate(tetromino.matrix);
         if (isValidMove(matrix, tetromino.row, tetromino.col)) {
           tetromino.matrix = matrix;

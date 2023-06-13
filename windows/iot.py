@@ -123,14 +123,14 @@ class IoTWindow:
                 'Content-Type': 'application/x-www-form-urlencoded'
                 }
                 
-            try:
+            # try:
 
-                request('POST',
-                        self.url,
-                        headers=headers,
-                        data=payload)
-            except Exception as e:
-                pass
+            #     request('POST',
+            #             self.url,
+            #             headers=headers,
+            #             data=payload)
+            # except Exception as e:
+            #     pass
     
             new_status = self.status_iot[name]['status']
             

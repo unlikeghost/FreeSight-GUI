@@ -93,16 +93,16 @@ class SOSWindow:
         
         payload:str = f'msg=Nececito ayuda urgentemente!!!'
         
-        try:
-            request('POST',
-                    self.url,
-                    headers=headers,
-                    data=payload)
+        # try:
+        #     request('POST',
+        #             self.url,
+        #             headers=headers,
+        #             data=payload)
         
-        except:
-            pass
+        # except:
+        #     pass
         
-        playsound(os_path.join('files', 'assets', 'sos', 'sos.mp3'))
+        # playsound(os_path.join('files', 'assets', 'sos', 'sos.mp3'))
         self.on_close()        
         
     def on_close(self,) -> None:
