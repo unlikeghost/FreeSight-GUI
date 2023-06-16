@@ -1,24 +1,22 @@
 import customtkinter
 from PIL import Image
-from typing import List, Dict
+from typing import Dict
 from os import path as os_path
 from json import load as load_json
 from json import dump as dump_json 
-from requests import request
+from windows.__base__ import WindowBase
 
 
-
-class IoTWindow:
+class IoTWindow(WindowBase):
     
-    def __init__(self, master, ip_server:str, port_server:int,
-                 full_screen:bool=False) -> None:
+    def __init__(self, master, ip_server:str,
+                 port_server:int, api_url:str='api/v1/public/send-iot',
+                 full_screen:bool = False) -> None:
+        super().__init__(master, ip_server, port_server, api_url, full_screen)
         
-        self.top_level = customtkinter.CTkToplevel(master)
-        self.master = master
         self.top_level.title('Free Sight IOT')
         
         if full_screen:
-            self.top_level.attributes('-fullscreen', True)
             height:int = self.top_level.winfo_screenwidth()
             width:int = self.top_level.winfo_screenheight()
             self.IMAGE_SIZE = (width - 155,
@@ -28,21 +26,13 @@ class IoTWindow:
             height:int = 800
             self.IMAGE_SIZE = ((width // 2)-35,
                                (height // 2)-35)
-            
+        
         iotjsonpath:str = os_path.join('files', 'assets', 'iot', 'status.json')
         self.status_iot:Dict[str, str] = load_json(open(iotjsonpath, 'r'))
-
-        self.top_level.protocol('WM_DELETE_WINDOW', self.on_close)
-        self.top_level.focus_force()
-        
-         
         
         self.buttons_mapping:Dict[int, str] = {index:app for index, app in enumerate(['Foco 1', 'Foco 2'])}
         
         self.key_mapping:Dict[str, customtkinter.CTkButton] = {}
-        
-        
-        self.url:str = f'http://{ip_server}:{port_server}/api/v1/public/send-domo'
         
         for  index, button in enumerate(self.buttons_mapping):
             
@@ -69,7 +59,7 @@ class IoTWindow:
         self.key_mapping[2] = customtkinter.CTkButton(master=self.top_level,
                                                       image=closeimage,
                                                       text='',
-                                                      command=self.on_close)
+                                                      command=self.__on_close__)
         self.key_mapping[2].grid(row=1, column=0, columnspan=2, padx=10, pady=10)
 
         self.key_mapping[0].configure(border_color='red', border_width=5)
@@ -80,13 +70,10 @@ class IoTWindow:
         
         self.current_index_key:int = 0
         self.current_key:str = self.key_mapping[self.current_index_key]
-        
-    def on_close(self) -> None:
-        self.master.deiconify()
-        dump_json(self.status_iot, open(os_path.join('files', 'assets', 'iot', 'status.json'), 'w'))
-        self.top_level.destroy()
     
-    def close(self) -> None:
+    def __on_close__(self) -> None:
+        dump_json(self.status_iot, open(os_path.join('files', 'assets', 'iot', 'status.json'), 'w'))
+        self.master.deiconify()
         self.top_level.destroy()
     
     def switch_button(self, event) -> None:
@@ -107,10 +94,11 @@ class IoTWindow:
         
         self.current_key:str = self.key_mapping[self.current_index_key]
     
-    def select_key(self, event) -> None:
+    def select_key(self, _) -> None:
         
         if self.current_index_key == 2:
-            self.on_close()
+            self.__on_close__()
+            
         else:
             name:str = self.buttons_mapping[self.current_index_key]
             self.status_iot[name]['status'] = 'on' if self.status_iot[name]['status'] == 'off' else 'off'
@@ -119,18 +107,7 @@ class IoTWindow:
             
             payload:str = f'led_1=Cocina&led_2=Habitacion&status_1={status_iot_foco1}&status_2={status_iot_foco2}'
 
-            headers:Dict[str, str] = {
-                'Content-Type': 'application/x-www-form-urlencoded'
-                }
-                
-            # try:
-
-            #     request('POST',
-            #             self.url,
-            #             headers=headers,
-            #             data=payload)
-            # except Exception as e:
-            #     pass
+            self.http_post(self.url, payload)
     
             new_status = self.status_iot[name]['status']
             
@@ -140,3 +117,17 @@ class IoTWindow:
                                            size=self.IMAGE_SIZE)
             
             self.key_mapping[self.current_index_key].configure(image=image,)
+
+
+if __name__ == '__main__':
+    root = customtkinter.CTk()
+    root.title('Free Sight Chat Demo')
+    root.attributes('-fullscreen', False)
+    root.iconbitmap(os_path.join('files', 'assets', 'icon.ico'))
+    
+    root.iconify()
+    
+    chat = IoTWindow(root, '127.0.0.1', 8080,
+                      full_screen=True)
+    
+    root.mainloop()

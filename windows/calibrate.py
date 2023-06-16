@@ -1,12 +1,13 @@
 import customtkinter
-from time import sleep
+from typing import Dict
 from os import path as os_path
+
 
 class ClaibrateWindow:
     
     def __init__(self, headset, full_screen:bool=False) -> None:
         
-        self.iter_for_calibration:int = 150
+        self.iter_for_calibration:int = 300
         
         self.headset = headset
         
@@ -54,26 +55,31 @@ class ClaibrateWindow:
                               sticky='nsew')
                 
         self.top_level.protocol('WM_DELETE_WINDOW', self.close)
-        
-        # self.top_level.mainloop()
 
     def calibrate(self) -> float:
-        
-        self.x_start_sum:float = 0
-        x_start_samples:float = 0
+        data: Dict[str, float] = {
+            'acc_iters': 0,
+            'x': 0,
+            'z': 0,
+            'emg_iters': 0,
+            'fp1': 0,
+            'fp2': 0,
+        }
         
         for iteration in range(self.iter_for_calibration):
-            ##PANTALLA DE CARGA
+            
+            data:Dict[str, float] = self.headset.calibrate_subject(data)
+            
             value:float = iteration / self.iter_for_calibration
             self.progress.set(value)
             self.top_level.update()
-            
-            x_temp_sum, x_temp_samples = self.headset.calibrate_subject(self.x_start_sum, x_start_samples)
-            self.x_start_sum += x_temp_sum
-            x_start_samples += x_temp_samples
         
-        return self.x_start_sum / self.iter_for_calibration  
-        # return self.x_start_sum / self.iter_for_calibration
+        data['x']:float = data['x'] / data['acc_iters']
+        data['z']:float = data['z'] / data['acc_iters']
+        data['fp1']:float = data['fp1'] / data['emg_iters']
+        data['fp2']:float = data['fp2'] / data['emg_iters']
+        
+        return data
     
     def close(self) -> None:
-        self.top_level.destroy()        
+        self.top_level.destroy()

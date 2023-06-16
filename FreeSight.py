@@ -11,6 +11,7 @@ from windows import (SOSWindow,
                      ChatWindow,
                      NoImplementedWindow,
                      ClaibrateWindow)
+from sys import exit as sys_exit
 
 
 class FreeSight(Thread):
@@ -21,7 +22,7 @@ class FreeSight(Thread):
         self.port_server:int = port_server
     
     def callback(self):
-        self.root.quit()
+        self.master.quit()
     
     def run(self) -> None:
         
@@ -86,12 +87,8 @@ class FreeSight(Thread):
         self.master.bind('<Up>', self.switch_button)
         self.master.bind('<Down>', self.switch_button)
         self.master.bind('<Return>', self.launch_app)
-        # self.master.protocol('WM_DELETE_WINDOW', self.close)
-        
         self.current_index_app:int = 0
-        
-        self.current_app:str = 'iot'
-        
+        self.current_app:str = 'iot'       
         self.master.mainloop()   
     
     def switch_button(self, event):
@@ -145,9 +142,8 @@ class FreeSight(Thread):
             self.master.iconify()
         
         elif self.current_app == 'SOS':
-            self.top_level = SOSWindow(master=self.master, ip_server=IP_SERVER, port_server=PORT_SERVER,
+            self.top_level = SOSWindow(ip_server=IP_SERVER, port_server=PORT_SERVER,
                                        full_screen=self.full_screen)
-            self.master.iconify()
         
         elif self.current_app == 'Tetris':
             tetris_path = os.path.join('Windows', 'Tetris.html')
@@ -156,12 +152,10 @@ class FreeSight(Thread):
         elif self.current_app == 'Lectura':
             self.top_level = NoImplementedWindow(master=self.master,
                                                  full_screen=self.full_screen)
-            self.master.iconify()
             
         elif self.current_app == 'TikTok':
             self.top_level = NoImplementedWindow(master=self.master,
                                                  full_screen=self.full_screen)
-            self.master.iconify()
 
 
 if __name__ == '__main__':
@@ -188,24 +182,22 @@ if __name__ == '__main__':
     calibration_window = ClaibrateWindow(full_screen=False,
                                          headset=Device)
     
-    x_ref = calibration_window.calibrate()
+    data_ref = calibration_window.calibrate()
     calibration_window.close()
+        
+    app = FreeSight(IP_SERVER, PORT_SERVER)
+
+    head_thread:Thread = Thread(target=Device.control_mode,
+                                args=(data_ref,),
+                                daemon=True)
     
-    head_thread:Thread = Thread(target=Device.move_mode,
-                                args=(x_ref,))
+    app_thread:Thread = Thread(target=app.run,
+                               daemon=True)
+    
+    app_thread.start()
     head_thread.start()
     
-    app = FreeSight(IP_SERVER, PORT_SERVER)
-    app.start()
-    
+    app_thread.join()
+    Device.close()
     head_thread.join()
-    app.join()
-    # app = Thread(target=FreeSight,
-    #              args=(IP_SERVER, PORT_SERVER))
-    # app.start()
-    
-    # app.join()
-    
-    # app = FreeSight(IP_SERVER, PORT_SERVER)
-    # app.mainloop()
-    
+    sys_exit(0)

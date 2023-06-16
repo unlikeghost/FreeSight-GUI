@@ -1,22 +1,18 @@
 import customtkinter
-from PIL import Image
 from typing import List, Dict
 from os import path as os_path
-from requests import request
-from string import ascii_uppercase as letters
-from CTkMessagebox import CTkMessagebox
+from windows.__base__ import WindowBase
 
 
 class KeyChat(customtkinter.CTkButton):
     
     def __init__(self, letters:List[str], *args, **kwargs) -> None:
-        
         super(KeyChat, self).__init__(*args, **kwargs)
                 
         self.clicks:int = 0
         self.letters:List[str] = letters
         self.configure(text=' '.join(self.letters))
-        
+
     def on_click(self) -> str:
         self.clicks += 1
         
@@ -27,22 +23,18 @@ class KeyChat(customtkinter.CTkButton):
 
     def on_change(self) -> None:
         self.clicks:int = 0
-        
 
-class ChatWindow:
-    def __init__(self, master, server:str, port:int=8080, api_url:str='api/v1/public/send-chat',
-                 full_screen:bool=False) -> None:
+
+class ChatWindow(WindowBase):
+    
+    def __init__(self, master, ip_server:str,
+                 port_server:int, api_url:str='api/v1/public/send-chat',
+                 full_screen: bool = False) -> None:
+        super().__init__(master, ip_server, port_server, api_url, full_screen)
         
-        self.master = master
-        self.top_level = customtkinter.CTkToplevel(master)
         self.top_level.title('Free Sight Chat')
-        self.top_level.protocol('WM_DELETE_WINDOW', self.on_close)
-        self.top_level.focus_force()
-        
-        self.url:str = f'http://{server}:{port}/{api_url}'
         
         if full_screen:
-            self.top_level.attributes('-fullscreen', True)
             font:tuple = ('Arial', 85)
             font_text:tuple = ('Arial', 120)
         else:
@@ -52,7 +44,8 @@ class ChatWindow:
         self.top_level.grid_columnconfigure(0, weight=1)
         self.top_level.grid_rowconfigure(0, weight=1)
         self.top_level.grid_rowconfigure(2, weight=1)
-        self.top_level.iconbitmap(os_path.join('files', 'assets', 'icon.ico'))
+        self.top_level.iconbitmap(os_path.join('files',
+                                               'assets', 'icon.ico'))
         
         key_board = {
             1: ['1', ',', '.'],
@@ -70,6 +63,7 @@ class ChatWindow:
             13:['Borrar'],
             14:['Salir']
         }
+        
         self.key_mapping:Dict[str, customtkinter.CTkButton] = {}
         
         ## Frame del texto
@@ -169,7 +163,7 @@ class ChatWindow:
             self.__write_text__()
         
         elif value == 'Salir':
-            self.on_close()
+            self.__on_close__()
         
         else:
             if self.key_changed == False:
@@ -186,37 +180,21 @@ class ChatWindow:
         self.text_box.insert(0, self.text)
     
     def __send_text__(self) -> None:
-        headers:Dict[str, str] = {
-            'Content-Type': 'application/x-www-form-urlencoded'
-        }
-        
         payload:str = f'msg={self.text}'
-        
-        # try:
-        #     request('POST',
-        #             self.url,
-        #             headers=headers,
-        #             data=payload)
-        
-        # except:
-        #     pass
-        
+        self.http_post(self.url, payload)
         self.text:str = ''
         self.__write_text__()    
-        
-    def on_close(self) -> None:
-        self.master.deiconify()
-        self.top_level.destroy()
-
-
+    
+    
 if __name__ == '__main__':
     root = customtkinter.CTk()
     root.title('Free Sight Chat Demo')
+    root.attributes('-fullscreen', False)
     root.iconbitmap(os_path.join('files', 'assets', 'icon.ico'))
     
-    chat = ChatWindow(root, 'localhost', 8080,
-                      full_screen=True)
-    
     root.iconify()
+    
+    chat = ChatWindow(root, '127.0.0.1', 8080,
+                      full_screen=False)
     
     root.mainloop()

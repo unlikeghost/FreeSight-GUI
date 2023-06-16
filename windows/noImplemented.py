@@ -2,21 +2,18 @@ import customtkinter
 from PIL import Image
 from time import sleep
 from os import path as os_path
+from windows.__base__ import WindowBase
 
 
-class NoImplementedWindow:
+class NoImplementedWindow(WindowBase):
     def __init__(self, master,
-                 full_screen:bool=False
-                 ) -> None:
+                 full_screen:bool = False) -> None:
+        super().__init__(master, ip_server='', port_server=0,
+                         api_url='', full_screen=full_screen)
         
-        self.top_level = customtkinter.CTkToplevel(master)
-        self.master = master
-        self.top_level.title('Free Sight :(')
-        self.top_level.protocol('WM_DELETE_WINDOW', self.on_close)
-        self.top_level.focus_force()
+        self.top_level.title('Free Sight Says: Sorry:(')
         
         if full_screen:
-            self.top_level.attributes('-fullscreen', True)
             height:int = self.top_level.winfo_screenwidth()
             width:int = self.top_level.winfo_screenheight()
             self.IMAGE_SIZE = ((width // 3)-35,
@@ -66,15 +63,19 @@ class NoImplementedWindow:
         self.fill_progress()
     
     def fill_progress(self) -> None:
-        
-        for iteration in range(31):
-            value:float = iteration / 30
+        for iteration in range(51):
+            value:float = iteration / 50
             self.progress.set(value)
             self.top_level.update()
             sleep(0.1)
         
-        self.on_close()
+        self.__on_close__()
+ 
+ 
+if __name__ == '__main__':
     
-    def on_close(self,) -> None:
-        self.master.deiconify()
-        self.top_level.destroy()
+    master = customtkinter.CTk()
+    master.attributes('-fullscreen', True)
+    chat = NoImplementedWindow(master, full_screen=True)
+                     
+    master.mainloop()
